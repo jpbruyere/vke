@@ -1,0 +1,12 @@
+[submodule "external/vkh"]
+	path = external/vkh
+	url = http://gitlab.com/jpbruyere/vkhelpers.git
+[submodule "external/glm"]
+	path = external/glm
+	url = https://github.com/jpbruyere/glm.git 
+[submodule "external/gli"]
+	path = external/gli
+	url = https://github.com/g-truc/gli
+[submodule "external/glfw"]
+	path = external/glfw
+	url = https://github.com/glfw/glfw.git
