@@ -3,7 +3,7 @@
 #include "vke.h"
 #include "resource.hpp"
 
-namespace vks
+namespace vke
 {
     struct Texture : public Resource {
         VkImage             image       = VK_NULL_HANDLE;
@@ -14,7 +14,7 @@ namespace vks
         VkImageLayout       imageLayout;
         VkDescriptorImageInfo descriptor;
 
-        void create (ptrVkDev _device,
+        void create (device_t* _device,
                         VkImageType imageType, VkFormat format, uint32_t width, uint32_t height,
                         VkImageUsageFlags usage, VkMemoryPropertyFlags memProps = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                         VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL,
@@ -24,10 +24,10 @@ namespace vks
                         VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                         VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE);
         Texture ();
-        Texture (ptrVkDev  _device, VkFormat _format, VkImage importedImg = VK_NULL_HANDLE,
+        Texture (device_t*  _device, VkFormat _format, VkImage importedImg = VK_NULL_HANDLE,
                  uint32_t _width = 0, uint32_t height = 0, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT,
                  uint32_t  mipLevels = 1, uint32_t arrayLayers = 1);
-        Texture (ptrVkDev  _device,
+        Texture (device_t*  _device,
                         VkImageType imageType, VkFormat format, uint32_t width, uint32_t height,
                         VkImageUsageFlags usage, VkMemoryPropertyFlags memProps = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                         VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL,
@@ -36,7 +36,7 @@ namespace vks
                         VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT,
                         VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
                         VkSharingMode sharingMode = VK_SHARING_MODE_EXCLUSIVE);
-        Texture (ptrVkDev  _device,  VkQueue copyQueue, VkImageType imageType, VkFormat format,
+        Texture (device_t*  _device,  VkQueue copyQueue, VkImageType imageType, VkFormat format,
                  std::vector<Texture> texArray, uint32_t width, uint32_t height,
                  VkImageUsageFlags _usage = VK_IMAGE_USAGE_SAMPLED_BIT);
 
@@ -74,7 +74,7 @@ namespace vks
                             VkCompareOp compareOp = VK_COMPARE_OP_NEVER);
         void buildMipmaps (VkQueue copyQueue, VkCommandBuffer _blitCmd = VK_NULL_HANDLE);
         void loadStbLinearNoSampling (std::string filename,
-            ptrVkDev device,
+            device_t* device,
             VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
             bool flipY = true);
     };

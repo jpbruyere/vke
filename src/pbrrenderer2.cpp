@@ -1,4 +1,5 @@
 #include "pbrrenderer2.h"
+#include "rendertarget.hpp"
 
 pbrRenderer::pbrRenderer () : vkRenderer()
 {
@@ -31,7 +32,7 @@ void pbrRenderer::prepareModels() {
 }
 
 void pbrRenderer::configurePipelineLayout () {
-    shadingCtx = new vks::ShadingContext (device, 3);
+    shadingCtx = new vke::ShadingContext (device, 2);
 
     shadingCtx->addDescriptorSetLayout(
         {//scene
@@ -46,10 +47,10 @@ void pbrRenderer::configurePipelineLayout () {
             { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr },//texture sampler
             { 1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr },//material ubo
         });
-    shadingCtx->addDescriptorSetLayout(
+    /*shadingCtx->addDescriptorSetLayout(
         {//meshes
             { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr },//vkvg texture
-        });
+        });*/
 
 
     shadingCtx->prepare();
@@ -76,18 +77,12 @@ void pbrRenderer::prepareDescriptors()
 
     shadingCtx->updateDescriptorSet (dsScene,
         {
-            {0,0,&sharedUBOs.matrices},
-            {0,1,&sharedUBOs.params},
+            {0,0,sharedUBOs.matrices},
+            {0,1,sharedUBOs.params},
             {0,2,&textures.irradianceCube},
             {0,3,&textures.prefilteredCube},
             {0,4,&textures.lutBrdf}
         });
-
-    descriptorSet = shadingCtx->allocateDescriptorSet (2);
-    shadingCtx->updateDescriptorSet (descriptorSet,
-    {
-        {2,0,&fullScreenTex},
-    });
 }
 void pbrRenderer::preparePipeline() {
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCI = {VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
@@ -184,8 +179,8 @@ void pbrRenderer::preparePipeline() {
     vertexInputStateCI.vertexAttributeDescriptionCount = 3;
 
     shaderStages = {
-        loadShader(device->dev, "skybox.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
-        loadShader(device->dev, "skybox.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
+        device->loadShader("skybox.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
+        device->loadShader("skybox.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
     };
     VK_CHECK_RESULT(vkCreateGraphicsPipelines(device->dev, device->pipelineCache, 1, &pipelineCI, nullptr, &pipelines.skybox));
 
@@ -200,8 +195,8 @@ void pbrRenderer::preparePipeline() {
     depthStencilStateCI.depthTestEnable = VK_TRUE;
 
     shaderStages = {
-        loadShader(device->dev, "pbr.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
-        loadShader(device->dev, "pbr.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
+        device->loadShader("pbr.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
+        device->loadShader("pbr.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
     };
     VK_CHECK_RESULT(vkCreateGraphicsPipelines(device->dev, device->pipelineCache, 1, &pipelineCI, nullptr, &pipelines.pbr));
 
@@ -223,7 +218,7 @@ void pbrRenderer::preparePipeline() {
         vkDestroyShaderModule(device->dev, shaderStage.module, nullptr);
 
     //create full screen quad pipeline to render vkvg texture
-    rasterizationStateCI.cullMode = VK_CULL_MODE_FRONT_BIT;
+    /*rasterizationStateCI.cullMode = VK_CULL_MODE_FRONT_BIT;
     rasterizationStateCI.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     vertexInputStateCI.vertexBindingDescriptionCount = 0;
     vertexInputStateCI.vertexAttributeDescriptionCount = 0;
@@ -231,13 +226,13 @@ void pbrRenderer::preparePipeline() {
     vertexInputStateCI.pVertexAttributeDescriptions = nullptr;
 
     shaderStages = {
-        loadShader(device->dev, "FullScreenQuad.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
-        loadShader(device->dev, "simpletexture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
+        device->loadShader("FullScreenQuad.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
+        device->loadShader("simpletexture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
     };
     VK_CHECK_RESULT(vkCreateGraphicsPipelines(device->dev, device->pipelineCache, 1, &pipelineCI, nullptr, &pipeline));
 
     for (auto shaderStage : shaderStages)
-        vkDestroyShaderModule(device->dev, shaderStage.module, nullptr);
+        vkDestroyShaderModule(device->dev, shaderStage.module, nullptr);*/
 }
 
 void pbrRenderer::draw(VkCommandBuffer cmdBuff) {
@@ -250,20 +245,6 @@ void pbrRenderer::draw(VkCommandBuffer cmdBuff) {
     // Opaque primitives
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.pbr);
     models[0].buildCommandBuffer (cmdBuff, pipelineLayout);
-
-    //full screen quad
-    fullScreenTex.setImageLayout(cmdBuff, VK_IMAGE_ASPECT_COLOR_BIT,
-                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-
-    vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 2, 1, &descriptorSet, 0, NULL);
-    vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-
-    vkCmdDraw(cmdBuff, 3, 1, 0, 0);
-
-    fullScreenTex.setImageLayout(cmdBuff, VK_IMAGE_ASPECT_COLOR_BIT,
-                                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
 }
 
 void pbrRenderer::generateBRDFLUT()
@@ -463,8 +444,8 @@ void pbrRenderer::generateBRDFLUT()
 
     // Look-up-table (from BRDF) pipeline
     shaderStages = {
-        loadShader(device->dev, "genbrdflut.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
-        loadShader(device->dev, "genbrdflut.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
+        device->loadShader("genbrdflut.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
+        device->loadShader("genbrdflut.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
     };
     VkPipeline pipeline;
     VK_CHECK_RESULT(vkCreateGraphicsPipelines(device->dev, device->pipelineCache, 1, &pipelineCI, nullptr, &pipeline));
@@ -528,7 +509,7 @@ void pbrRenderer::generateCubemaps()
 
     for (uint32_t target = 0; target < PREFILTEREDENV + 1; target++) {
 
-        vks::TextureCubeMap cubemap;
+        vke::TextureCubeMap cubemap;
 
         auto tStart = std::chrono::high_resolution_clock::now();
 
@@ -865,13 +846,13 @@ void pbrRenderer::generateCubemaps()
         pipelineCI.pStages = shaderStages.data();
         pipelineCI.renderPass = renderpass;
 
-        shaderStages[0] = loadShader(device->dev, "filtercube.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+        shaderStages[0] = device->loadShader("filtercube.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
         switch (target) {
             case IRRADIANCE:
-                shaderStages[1] = loadShader(device->dev, "irradiancecube.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+                shaderStages[1] = device->loadShader("irradiancecube.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
                 break;
             case PREFILTEREDENV:
-                shaderStages[1] = loadShader(device->dev, "prefilterenvmap.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+                shaderStages[1] = device->loadShader("prefilterenvmap.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
                 break;
         };
         VkPipeline pipeline;

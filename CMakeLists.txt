@@ -39,6 +39,53 @@ endif()
 FIND_PACKAGE(Vulkan REQUIRED)
 #FIND_PACKAGE(GLFW3)
 
+if(ANDROID)
+	file(GLOB glslc-folders ${ANDROID_NDK}/shader-tools/*)
+else()
+	file(GLOB glslc-folders ${VULKAN_SDK}/bin)
+endif()
+FIND_PROGRAM(GLSLC glslc HINTS ${glslc-folders})
+
+file(GLOB_RECURSE DATAS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "data/*")
+FOREACH(DATA_FILE ${DATAS})
+	GET_FILENAME_COMPONENT(copy-dest-dir ${CMAKE_CURRENT_BINARY_DIR}/${DATA_FILE} DIRECTORY)
+	SET(copy-output ${CMAKE_CURRENT_BINARY_DIR}/${DATA_FILE})
+	ADD_CUSTOM_COMMAND(
+	   OUTPUT  ${copy-output}
+	   COMMAND ${CMAKE_COMMAND} -E make_directory ${copy-dest-dir}
+	   COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/${DATA_FILE}" "${copy-output}"
+	   COMMENT "Copying ${DATA_FILE} to ${copy-output}"
+	   DEPENDS ${DATA_FILE}
+	   VERBATIM
+	)
+ENDFOREACH()
+add_custom_target(DataCopy ALL DEPENDS ${DATAS})
+
+IF (NOT GLSLC)
+	message(FATAL_ERROR "Could not find glslc executable")
+ENDIF()
+
+if(GLSLC)
+	SET(SHADER_DIR "shaders")
+	SET(SHADER_FILES ${SHADER_DIR}/*.frag ${SHADER_DIR}/*.vert ${SHADER_DIR}/*.geom  ${SHADER_DIR}/*.comp)
+	FILE(GLOB_RECURSE SHADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${SHADER_FILES})
+	FOREACH(SHADER ${SHADERS})
+		SET(shader-input ${CMAKE_CURRENT_SOURCE_DIR}/${SHADER})
+		SET(shader-output ${CMAKE_CURRENT_BINARY_DIR}/${SHADER}.spv)
+		ADD_CUSTOM_COMMAND (
+		  OUTPUT ${shader-output}
+		  COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/${SHADER_DIR}"
+		  COMMAND ${GLSLC} ${shader-input} -o ${shader-output}
+		  COMMENT "Compiling ${shader-input}"
+		  DEPENDS ${SHADER}
+		  VERBATIM
+		)
+		SET(SHADER_OUTPUTS ${SHADER_OUTPUTS} ${shader-output})
+	ENDFOREACH()
+
+	ADD_CUSTOM_TARGET("${PROJECT_NAME}_BuildShaderHeader" ALL DEPENDS ${SHADER_OUTPUTS})
+endif()
+
 FILE(GLOB SOURCES "src/*.cpp")
 
 INCLUDE(GNUInstallDirs)
@@ -76,3 +123,15 @@ setup_lib ("${PROJECT_NAME}_static")
 ADD_LIBRARY("${PROJECT_NAME}_shared" SHARED ${SOURCES})
 SET_PROPERTY(TARGET "${PROJECT_NAME}_static" PROPERTY POSITION_INDEPENDENT_CODE ON)
 setup_lib ("${PROJECT_NAME}_shared")
+
+ADD_EXECUTABLE(${PROJECT_NAME}_test "tests/test1.cpp" ${SHADERS})
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME}_test PRIVATE
+	#${BULLET_INCLUDE_DIR}
+	${CMAKE_CURRENT_SOURCE_DIR}/include
+	${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}_test
+	vke_static
+	vkvg
+	#{BULLET_LIBRARIES}
+)

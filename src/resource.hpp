@@ -2,10 +2,10 @@
 
 #include "vke.h"
 
-namespace vks {
+namespace vke {
     struct Resource
     {
-        ptrVkDev                device;
+        device_t*               device;
         VkDeviceMemory          deviceMemory= VK_NULL_HANDLE;
         VkMemoryRequirements    memReqs    = {};
 

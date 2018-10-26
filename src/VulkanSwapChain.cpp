@@ -11,9 +11,11 @@
 #pragma once
 
 #include "VulkanSwapChain.hpp"
-#include "VkEngine.h"
+#include "VulkanDevice.hpp"
+#include "rendertarget.hpp"
+#include "macros.h"
 
-vks::VulkanSwapChain::VulkanSwapChain(ptrVkEngine _vke, bool vsync) {
+vke::swap_chain_t::swap_chain_t(engine_t *_vke, bool vsync) {
     vke = _vke;
     GET_INSTANCE_PROC_ADDR(vke->instance, GetPhysicalDeviceSurfaceSupportKHR);
     GET_INSTANCE_PROC_ADDR(vke->instance, GetPhysicalDeviceSurfaceCapabilitiesKHR);
@@ -136,7 +138,7 @@ vks::VulkanSwapChain::VulkanSwapChain(ptrVkEngine _vke, bool vsync) {
     presentInfo = {VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
     presentInfo.swapchainCount = 1;
 }
-vks::VulkanSwapChain::~VulkanSwapChain()
+vke::swap_chain_t::~swap_chain_t()
 {
     vke->device->destroySemaphore(presentCompleteSemaphore);
 
@@ -149,7 +151,7 @@ vks::VulkanSwapChain::~VulkanSwapChain()
     swapChain = VK_NULL_HANDLE;
 }
 
-void vks::VulkanSwapChain::create(uint32_t& width, uint32_t& height)
+void vke::swap_chain_t::create(uint32_t& width, uint32_t& height)
 {
     vkDeviceWaitIdle (vke->device->dev);
 

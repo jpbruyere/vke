@@ -11,15 +11,15 @@
 #pragma once
 
 #include "vke.h"
-#include "rendertarget.hpp"
-namespace vks {
+
+namespace vke {
 
     typedef struct _SwapChainBuffers {
         VkImage image;
         VkImageView view;
     } SwapChainBuffer;
 
-    class VulkanSwapChain
+    class swap_chain_t
     {
     private:
         // Function pointers
@@ -33,7 +33,7 @@ namespace vks {
         PFN_vkAcquireNextImageKHR   fpAcquireNextImageKHR;
         PFN_vkQueuePresentKHR       fpQueuePresentKHR;
     public:
-        ptrVkEngine                 vke;
+        engine_t*                   vke;
         VkSwapchainCreateInfoKHR    infos = {VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR};
 
         VkSwapchainKHR              swapChain = VK_NULL_HANDLE;
@@ -45,13 +45,13 @@ namespace vks {
         VkPresentInfoKHR            presentInfo;
         VkFormat                    depthFormat;
 
-        std::vector<RenderTarget*>  boundRenderTargets;
+        std::vector<render_target_t*>  boundRenderTargets;
 
         //RenderTarget* multisampleTarget;
-        ptrTexture depthStencil;
+        Texture* depthStencil;
 
-        VulkanSwapChain(ptrVkEngine _vke, bool vsync = true);
-        virtual ~VulkanSwapChain();
+        swap_chain_t(engine_t* _vke, bool vsync = true);
+        virtual ~swap_chain_t();
 
         void create(uint32_t& width, uint32_t& height);
 

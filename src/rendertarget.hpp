@@ -3,7 +3,7 @@
 #include "vke.h"
 #include "texture.hpp"
 
-namespace vks {
+namespace vke {
     enum AttachmentType {ColorAttach, DepthAttach, ResolveAttach};
 
     struct AttachmentDef {
@@ -15,28 +15,28 @@ namespace vks {
         VkSampleCountFlagBits   samples     = VK_SAMPLE_COUNT_1_BIT;
     };
 
-    struct RenderTarget {
-        ptrVkDev                    device;
+    struct render_target_t {
+        device_t*                   device;
 
         uint32_t                    width;
         uint32_t                    height;
         VkSampleCountFlagBits       samples;
         std::vector<AttachmentDef>  attachmentDefs;
-        std::vector<vks::Texture>   attachments;
+        std::vector<vke::Texture>   attachments;
         int                         presentableAttachment = -1;
 
-        ptrSwapchain    			swapChain   = nullptr;
+        swap_chain_t*    			swapChain   = nullptr;
 
         VkRenderPass                renderPass;
         std::vector<VkFramebuffer>  frameBuffers;
 
-        RenderTarget(ptrVkDev _device, VkSampleCountFlagBits _samples = VK_SAMPLE_COUNT_1_BIT);
-        virtual ~RenderTarget();
+        render_target_t(device_t* _device, VkSampleCountFlagBits _samples = VK_SAMPLE_COUNT_1_BIT);
+        virtual ~render_target_t();
 
         /** @brief create default offscreen rendertarget with 1 color and 1 depth attachments */
         void createDefaultOffscreenTarget (uint32_t _width, uint32_t _height, VkFormat _colorFormat, VkFormat _depthFormat);
         /** @brief create default presentable rendertarget bound to a swapchain */
-        void createDefaultPresentableTarget (ptrSwapchain _swapChain);
+        void createDefaultPresentableTarget (swap_chain_t* _swapChain);
 
         void cleanupAttachments();
         void createAttachments(VkFormat _colorFormat, VkFormat _depthFormat);

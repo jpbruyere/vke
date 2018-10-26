@@ -6,7 +6,7 @@
 #include "VulkanglTFModel.hpp"
 
 
-class pbrRenderer : public vks::vkRenderer
+class pbrRenderer : public vke::vkRenderer
 {
     void generateBRDFLUT();
     void generateCubemaps();
@@ -25,13 +25,11 @@ public:
 
     VkDescriptorSet         dsScene;
 
-    vks::Texture            fullScreenTex;
-
     struct Textures {
-        vks::TextureCubeMap environmentCube;
-        vks::Texture2D      lutBrdf;
-        vks::TextureCubeMap irradianceCube;
-        vks::TextureCubeMap prefilteredCube;
+        vke::TextureCubeMap environmentCube;
+        vke::Texture2D      lutBrdf;
+        vke::TextureCubeMap irradianceCube;
+        vke::TextureCubeMap prefilteredCube;
     } textures;
 
     vkglTF::Model               skybox;

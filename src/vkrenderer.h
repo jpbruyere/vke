@@ -1,11 +1,10 @@
 #pragma once
 
-#include "VkEngine.h"
-#include "VulkanSwapChain.hpp"
+#include "vke.h"
 
 #define DRAW_FENCE_TIMEOUT 99900000
 
-namespace vks {
+namespace vke {
 
     class vkRenderer
     {
@@ -13,11 +12,11 @@ namespace vks {
 
         bool prepared = false;
 
-        vks::VulkanDevice*          device;
-        vks::RenderTarget*          renderTarget;
-        vks::VkEngine::UniformBuffers sharedUBOs;
+        vke::device_t*          device;
+        vke::render_target_t*          renderTarget;
+        vke::engine_t::UniformBuffers sharedUBOs;
 
-        vks::ShadingContext*        shadingCtx;
+        vke::ShadingContext*        shadingCtx;
 
         VkCommandPool               commandPool = VK_NULL_HANDLE;
         std::vector<VkCommandBuffer>cmdBuffers;
@@ -31,7 +30,7 @@ namespace vks {
         VkPipelineLayout        pipelineLayout  = VK_NULL_HANDLE;
 
         std::vector<float>	vertices;
-        vks::Buffer			vertexBuff;
+        vke::buffer_t*		vertexBuff;
         uint32_t			vBufferSize = 10000 * sizeof(float) * 6;
 
         virtual void prepare();
@@ -50,8 +49,8 @@ namespace vks {
         vkRenderer ();
         virtual ~vkRenderer();
 
-        virtual void create (ptrVkDev _device, vks::RenderTarget* _renderTarget,
-                                               VkEngine::UniformBuffers& _sharedUbos);
+        virtual void create (device_t *_device, vke::render_target_t* _renderTarget,
+                                               engine_t::UniformBuffers& _sharedUbos);
         virtual void destroy();
 
         virtual void buildCommandBuffer ();

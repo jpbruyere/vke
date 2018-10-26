@@ -1,25 +1,31 @@
 #include "vkrenderer.h"
 //#include "pbrrenderer2.h"
+#include "VulkanDevice.hpp"
+#include "rendertarget.hpp"
+#include "VulkanSwapChain.hpp"
+#include "shadingcontext.hpp"
+#include "VulkanBuffer.hpp"
+#include "macros.h"
 
 const VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-vks::vkRenderer::vkRenderer () {}
+vke::vkRenderer::vkRenderer () {}
 
-void vks::vkRenderer::create(ptrVkDev _device, vks::RenderTarget *_renderTarget,
-                   VkEngine::UniformBuffers& _sharedUbos) {
+void vke::vkRenderer::create(device_t* _device, vke::render_target_t *_renderTarget,
+                   engine_t::UniformBuffers& _sharedUbos) {
     renderTarget= _renderTarget;
     device      = _device;
     sharedUBOs = _sharedUbos;
 
     prepare();
 }
-vks::vkRenderer::~vkRenderer()
+vke::vkRenderer::~vkRenderer()
 {
     if (prepared)
         destroy();
 }
 
-void vks::vkRenderer::destroy() {
+void vke::vkRenderer::destroy() {
     prepared = false;
 
     freeRessources();
@@ -40,7 +46,7 @@ void vks::vkRenderer::destroy() {
     pipelineLayout  = VK_NULL_HANDLE;
     commandPool     = VK_NULL_HANDLE;
 }
-void vks::vkRenderer::prepare() {
+void vke::vkRenderer::prepare() {
     fences.resize (renderTarget->swapChain->imageCount);
     for (uint i=0; i<renderTarget->swapChain->imageCount; i++)
         fences[i] = device->createFence(true);
@@ -76,13 +82,13 @@ void vks::vkRenderer::prepare() {
     prepared = true;
 }
 
-void vks::vkRenderer::prepareRendering()
+void vke::vkRenderer::prepareRendering()
 {
 
 }
 
-void vks::vkRenderer::configurePipelineLayout () {
-    shadingCtx = new vks::ShadingContext (device);
+void vke::vkRenderer::configurePipelineLayout () {
+    shadingCtx = new vke::ShadingContext (device);
 
     shadingCtx->addDescriptorSetLayout({{ 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr }});
 
@@ -90,26 +96,25 @@ void vks::vkRenderer::configurePipelineLayout () {
 
 }
 //place here specific renderer resources
-void vks::vkRenderer::loadRessources() {
-    vertexBuff.create (device,
+void vke::vkRenderer::loadRessources() {
+    vertexBuff = new buffer_t(device,
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         vBufferSize);
 
-    vertexBuff.map();
+    vertexBuff->map();
 }
 //and free here
-void vks::vkRenderer::freeRessources() {
-    vertexBuff.unmap();
-    vertexBuff.destroy();
+void vke::vkRenderer::freeRessources() {
+    delete vertexBuff;
 }
-void vks::vkRenderer::prepareDescriptors()
+void vke::vkRenderer::prepareDescriptors()
 {
     descriptorSet = shadingCtx->allocateDescriptorSet(0);
 
-    shadingCtx->updateDescriptorSet (descriptorSet,{{0,0,&sharedUBOs.matrices}});
+    shadingCtx->updateDescriptorSet (descriptorSet,{{0,0,sharedUBOs.matrices}});
 }
-void vks::vkRenderer::preparePipeline()
+void vke::vkRenderer::preparePipeline()
 {
     VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCI = {VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
     inputAssemblyStateCI.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
@@ -196,23 +201,23 @@ void vks::vkRenderer::preparePipeline()
     pipelineCI.pStages = shaderStages.data();
 
     shaderStages = {
-        loadShader(device->dev, "debugDraw.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
-        loadShader(device->dev, "debugDraw.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
+        device->loadShader("debugDraw.vert.spv", VK_SHADER_STAGE_VERTEX_BIT),
+        device->loadShader("debugDraw.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT)
     };
     VK_CHECK_RESULT(vkCreateGraphicsPipelines(device->dev, device->pipelineCache, 1, &pipelineCI, nullptr, &pipeline));
 
     for (auto shaderStage : shaderStages)
         vkDestroyShaderModule(device->dev, shaderStage.module, nullptr);
 }
-void vks::vkRenderer::draw(VkCommandBuffer cmdBuff) {
+void vke::vkRenderer::draw(VkCommandBuffer cmdBuff) {
     VkDeviceSize offsets[1] = { 0 };
 
     vkCmdBindPipeline (cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     vkCmdBindDescriptorSets(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, NULL);
-    vkCmdBindVertexBuffers (cmdBuff, 0, 1, &vertexBuff.buffer, offsets);
+    vkCmdBindVertexBuffers (cmdBuff, 0, 1, &vertexBuff->buffer, offsets);
     vkCmdDraw (cmdBuff,  vertexCount, 1, 0, 0);
 }
-void vks::vkRenderer::rebuildCommandBuffer () {
+void vke::vkRenderer::rebuildCommandBuffer () {
     prepared = false;
     vkDeviceWaitIdle(device->dev);
     vkFreeCommandBuffers(device->dev, commandPool, cmdBuffers.size(), cmdBuffers.data());
@@ -227,7 +232,7 @@ void vks::vkRenderer::rebuildCommandBuffer () {
     buildCommandBuffer();
     vkDeviceWaitIdle(device->dev);
 }
-void vks::vkRenderer::buildCommandBuffer (){
+void vke::vkRenderer::buildCommandBuffer (){
     prepared = false;
 
     VkCommandBufferBeginInfo cmdBufInfo = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
@@ -272,7 +277,7 @@ void vks::vkRenderer::buildCommandBuffer (){
     prepared = true;
 }
 
-void vks::vkRenderer::submit (VkQueue queue, VkSemaphore* waitSemaphore, uint32_t waitSemaphoreCount) {
+void vke::vkRenderer::submit (VkQueue queue, VkSemaphore* waitSemaphore, uint32_t waitSemaphoreCount) {
     if (!prepared)
         return;
     submitInfo.pCommandBuffers		= &cmdBuffers[renderTarget->swapChain->currentBuffer];
@@ -284,19 +289,19 @@ void vks::vkRenderer::submit (VkQueue queue, VkSemaphore* waitSemaphore, uint32_
 
     VK_CHECK_RESULT(vkQueueSubmit(queue, 1, &submitInfo, fences[renderTarget->swapChain->currentBuffer]));
 }
-void vks::vkRenderer::clear(){
+void vke::vkRenderer::clear(){
     vertices.clear();
     vertexCount = 0;
 }
 
-void vks::vkRenderer::flush(){
+void vke::vkRenderer::flush(){
     VK_CHECK_RESULT(vkWaitForFences(device->dev, 1, &fences[renderTarget->swapChain->currentBuffer], VK_TRUE, DRAW_FENCE_TIMEOUT));
-    memcpy(vertexBuff.mapped, vertices.data(), vertices.size() * sizeof(float));
+    memcpy(vertexBuff->mapped, vertices.data(), vertices.size() * sizeof(float));
     vertexCount = vertices.size() / 6;
     buildCommandBuffer();
 }
 
-void vks::vkRenderer::drawLine(const glm::vec3& from, const glm::vec3& to,
+void vke::vkRenderer::drawLine(const glm::vec3& from, const glm::vec3& to,
                           const glm::vec3& fromColor, const glm::vec3& toColor)
 {
     vertices.push_back(from.x);
@@ -316,7 +321,7 @@ void vks::vkRenderer::drawLine(const glm::vec3& from, const glm::vec3& to,
     vertices.push_back(toColor.z);
 }
 
-void vks::vkRenderer::drawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color)
+void vke::vkRenderer::drawLine(const glm::vec3& from, const glm::vec3& to, const glm::vec3& color)
 {
     drawLine(from,to,color,color);
 }

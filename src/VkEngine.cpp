@@ -10,7 +10,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "tiny_gltf.h"
 
-#include "VkEngine.h"
+#include "vke.h"
+#include "macros.h"
 
 #define ENGINE_NAME     "vke"
 #define ENGINE_VERSION  1
@@ -25,35 +26,7 @@
 #include "rendertarget.hpp"
 
 #include "VulkanSwapChain.hpp"
-
-VkPipelineShaderStageCreateInfo loadShader(VkDevice device, std::string filename, VkShaderStageFlagBits stage)
-{
-    VkPipelineShaderStageCreateInfo shaderStage = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
-    shaderStage.stage = stage;
-    shaderStage.pName = "main";
-    std::ifstream is("shaders/" + filename, std::ios::binary | std::ios::in | std::ios::ate);
-
-    if (is.is_open()) {
-        size_t size = is.tellg();
-        is.seekg(0, std::ios::beg);
-        char* shaderCode = new char[size];
-        is.read(shaderCode, size);
-        is.close();
-        assert(size > 0);
-        VkShaderModuleCreateInfo moduleCreateInfo{};
-        moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        moduleCreateInfo.codeSize = size;
-        moduleCreateInfo.pCode = (uint32_t*)shaderCode;
-        vkCreateShaderModule(device, &moduleCreateInfo, NULL, &shaderStage.module);
-        delete[] shaderCode;
-    }
-    else {
-        std::cerr << "Error: Could not open shader file \"" << filename << "\"" << std::endl;
-        shaderStage.module = VK_NULL_HANDLE;
-    }
-    assert(shaderStage.module != VK_NULL_HANDLE);
-    return shaderStage;
-}
+#include "camera.hpp"
 
 int32_t nextValuePair(std::stringstream *stream)
 {
@@ -121,7 +94,7 @@ std::array<bmchar, 255> parsebmFont(const std::string& fileName)
     return fontChars;
 }
 
-std::vector<const char*> vks::VkEngine::args;
+std::vector<const char*> vke::engine_t::args;
 
 VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject, size_t location, int32_t msgCode, const char * pLayerPrefix, const char * pMsg, void * pUserData)
 {
@@ -146,7 +119,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageCallback(VkDebugReportFlagsEXT flags,
     return VK_FALSE;
 }
 
-std::string vks::VkEngine::getWindowTitle()
+std::string vke::engine_t::getWindowTitle()
 {
     std::string device(this->device->properties.deviceName);
     std::string windowTitle;
@@ -155,21 +128,21 @@ std::string vks::VkEngine::getWindowTitle()
 }
 
 static void onkey_callback (GLFWwindow* window, int key, int scanCode, int action ,int mods){
-    vks::VkEngine* e = (vks::VkEngine*)glfwGetWindowUserPointer(window);
+    vke::engine_t* e = (vke::engine_t*)glfwGetWindowUserPointer(window);
     if (action == GLFW_PRESS)
         e->keyDown(key);
     else
         e->keyUp(key);
 }
 static void char_callback (GLFWwindow* window, uint32_t c){
-    vks::VkEngine* e = (vks::VkEngine*)glfwGetWindowUserPointer(window);
+    vke::engine_t* e = (vke::engine_t*)glfwGetWindowUserPointer(window);
 }
 static void mouse_move_callback(GLFWwindow* window, double x, double y){
-    vks::VkEngine* e = (vks::VkEngine*)glfwGetWindowUserPointer(window);
+    vke::engine_t* e = (vke::engine_t*)glfwGetWindowUserPointer(window);
     e->handleMouseMove((int32_t)x, (int32_t)y);
 }
 static void mouse_button_callback(GLFWwindow* window, int but, int state, int modif){
-    vks::VkEngine* e = (vks::VkEngine*)glfwGetWindowUserPointer(window);
+    vke::engine_t* e = (vke::engine_t*)glfwGetWindowUserPointer(window);
     if (state == GLFW_PRESS){
         e->mouseButtons[but] = true;
         e->handleMouseButtonDown(but);
@@ -179,7 +152,7 @@ static void mouse_button_callback(GLFWwindow* window, int but, int state, int mo
     }
 }
 
-vks::VkEngine::VkEngine (uint32_t _width, uint32_t _height,
+vke::engine_t::engine_t (uint32_t _width, uint32_t _height,
                     VkPhysicalDeviceType preferedGPU)
 {
     width = _width;
@@ -216,7 +189,7 @@ vks::VkEngine::VkEngine (uint32_t _width, uint32_t _height,
     std::vector<const char*> enabledExtentions;
     enabledExtentions.assign(enabledExts, enabledExts + enabledExtsCount);
 
-    createInstance ("vkChess", enabledExtentions);
+    _createInstance ("vkChess", enabledExtentions);
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE,  GLFW_TRUE);
@@ -241,18 +214,21 @@ vks::VkEngine::VkEngine (uint32_t _width, uint32_t _height,
     VK_CHECK_RESULT(vkEnumeratePhysicalDevices(instance, &phyCount, physicalDevices.data()));
 
     for (uint i=0; i<phyCount; i++){
-        phyInfos = vks::vkPhyInfo(physicalDevices[i], surface);
-        if (phyInfos.properties.deviceType == preferedGPU)
+        phyInfos = new vke::vkPhyInfo(physicalDevices[i], surface);
+        if (phyInfos->properties.deviceType == preferedGPU)
             break;
     }
 
+    camera = new Camera();
 }
 
 
-vks::VkEngine::~VkEngine()
+vke::engine_t::~engine_t()
 {
-    sharedUBOs.matrices.destroy();
-    sharedUBOs.params.destroy();
+    delete sharedUBOs.matrices;
+    delete sharedUBOs.params;
+    delete phyInfos;
+    delete camera;
 
     delete renderTarget;
     delete swapChain;
@@ -270,7 +246,7 @@ vks::VkEngine::~VkEngine()
     vkDestroyInstance (instance, VK_NULL_HANDLE);
 }
 
-void vks::VkEngine::start () {
+void vke::engine_t::start () {
     std::vector<const char*> devLayers;
 
 #if DEBUG
@@ -278,12 +254,12 @@ void vks::VkEngine::start () {
         devLayers.push_back ("VK_LAYER_LUNARG_standard_validation");
 #endif
 
-    device  = new vks::VulkanDevice (phyInfos, devLayers);
+    device  = new vke::device_t (phyInfos, devLayers);
 
-    swapChain = new VulkanSwapChain (this, false);
+    swapChain = new swap_chain_t (this, false);
     swapChain->create (width, height);
 
-    renderTarget = new RenderTarget(device, settings.sampleCount);
+    renderTarget = new render_target_t(device, settings.sampleCount);
     renderTarget->createDefaultPresentableTarget (swapChain);
 
     prepareUniformBuffers();
@@ -307,8 +283,8 @@ void vks::VkEngine::start () {
         auto tEnd = std::chrono::high_resolution_clock::now();
         auto tDiff = std::chrono::duration<double, std::milli>(tEnd - tStart).count();
         frameTimer = tDiff / 1000.0f;
-        camera.update(frameTimer);
-        if (camera.moving())
+        camera->update(frameTimer);
+        if (camera->moving())
             viewUpdated = true;
         fpsTimer += (float)tDiff;
         if (fpsTimer > 1000.0f)
@@ -321,9 +297,9 @@ void vks::VkEngine::start () {
     }
 }
 
-void vks::VkEngine::prepare(){}
+void vke::engine_t::prepare(){}
 
-void vks::VkEngine::prepareFrame()
+void vke::engine_t::prepareFrame()
 {
     VkResult err = swapChain->acquireNextImage (device->dev);
     if ((err == VK_ERROR_OUT_OF_DATE_KHR) || (err == VK_SUBOPTIMAL_KHR)) {
@@ -333,7 +309,7 @@ void vks::VkEngine::prepareFrame()
     }
 }
 
-void vks::VkEngine::createInstance (const std::string& app_name, std::vector<const char*>& extentions) {
+void vke::engine_t::_createInstance (const std::string& app_name, std::vector<const char*>& extentions) {
     VkApplicationInfo   infos = {VK_STRUCTURE_TYPE_APPLICATION_INFO};
                         infos.pApplicationName  = app_name.c_str();
                         infos.applicationVersion= 1;
@@ -487,47 +463,47 @@ void vks::VkEngine::createInstance (const std::string& app_name, std::vector<con
 //}
 
 
-void vks::VkEngine::viewChanged() {
+void vke::engine_t::viewChanged() {
     updateUniformBuffers();
 }
 
-void vks::VkEngine::prepareUniformBuffers()
+void vke::engine_t::prepareUniformBuffers()
 {
     // Objact vertex shader uniform buffer
-    sharedUBOs.matrices.create(device,
+    sharedUBOs.matrices = new buffer_t(device,
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         sizeof(mvpMatrices));
 
     // Shared parameter uniform buffer
-    sharedUBOs.params.create(device,
+    sharedUBOs.params = new buffer_t(device,
         VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         sizeof(lightingParams));
 
     // Map persistent
-    sharedUBOs.matrices.map();
-    sharedUBOs.params.map();
+    sharedUBOs.matrices->map();
+    sharedUBOs.params->map();
 
     updateUniformBuffers();
     updateParams();
 }
-void vks::VkEngine::updateUniformBuffers()
+void vke::engine_t::updateUniformBuffers()
 {
     // 3D object
-    mvpMatrices.projection = camera.matrices.perspective;
-    mvpMatrices.view = camera.matrices.view;
-    mvpMatrices.view3 = glm::mat4(glm::mat3(camera.matrices.view));
-    mvpMatrices.camPos = camera.position * -1.0f;
-    sharedUBOs.matrices.copyTo (&mvpMatrices, sizeof(mvpMatrices));
+    mvpMatrices.projection = camera->matrices.perspective;
+    mvpMatrices.view = camera->matrices.view;
+    mvpMatrices.view3 = glm::mat4(glm::mat3(camera->matrices.view));
+    mvpMatrices.camPos = camera->position * -1.0f;
+    sharedUBOs.matrices->copyTo (&mvpMatrices, sizeof(mvpMatrices));
 }
-void vks::VkEngine::updateParams()
+void vke::engine_t::updateParams()
 {
     lightingParams.lightDir = glm::vec4(-10.0f, 150.f, -10.f, 1.0f);
-    sharedUBOs.params.copyTo(&lightingParams, sizeof(lightingParams));
+    sharedUBOs.params->copyTo(&lightingParams, sizeof(lightingParams));
 }
 
-void vks::VkEngine::windowResize()
+void vke::engine_t::windowResize()
 {
     if (!prepared)
         return;
@@ -539,13 +515,13 @@ void vks::VkEngine::windowResize()
 
     vkDeviceWaitIdle(device->dev);
 
-    camera.updateAspectRatio((float)width / (float)height);
+    camera->updateAspectRatio((float)width / (float)height);
     viewChanged();
 
     prepared = true;
 }
 
-void vks::VkEngine::keyDown(uint32_t key) {
+void vke::engine_t::keyDown(uint32_t key) {
     switch (key) {
     case GLFW_KEY_ESCAPE :
         glfwSetWindowShouldClose(window, GLFW_TRUE);
@@ -553,10 +529,10 @@ void vks::VkEngine::keyDown(uint32_t key) {
     }
 
 }
-void vks::VkEngine::keyUp(uint32_t key) {
+void vke::engine_t::keyUp(uint32_t key) {
     keyPressed (key);
 }
-void vks::VkEngine::keyPressed(uint32_t key) {
+void vke::engine_t::keyPressed(uint32_t key) {
     switch (key) {
     case GLFW_KEY_F1:
         if (lightingParams.exposure > 0.1f) {
@@ -588,7 +564,7 @@ void vks::VkEngine::keyPressed(uint32_t key) {
         break;
     }
 }
-void vks::VkEngine::handleMouseMove(int32_t x, int32_t y)
+void vke::engine_t::handleMouseMove(int32_t x, int32_t y)
 {
     int32_t dx = (int32_t)mousePos.x - x;
     int32_t dy = (int32_t)mousePos.y - y;
@@ -601,15 +577,15 @@ void vks::VkEngine::handleMouseMove(int32_t x, int32_t y)
     }
 
     if (mouseButtons[GLFW_MOUSE_BUTTON_RIGHT]) {
-        camera.rotate(glm::vec3(-dy * camera.rotationSpeed, -dx * camera.rotationSpeed, 0.0f));
+        camera->rotate(glm::vec3(-dy * camera->rotationSpeed, -dx * camera->rotationSpeed, 0.0f));
         viewUpdated = true;
     }
     if (mouseButtons[GLFW_MOUSE_BUTTON_MIDDLE]) {
-        camera.translate(glm::vec3(-dx * 0.01f, -dy * 0.01f, 0.0f));
+        camera->translate(glm::vec3(-dx * 0.01f, -dy * 0.01f, 0.0f));
         viewUpdated = true;
     }
     mousePos = glm::vec2((float)x, (float)y);
 }
-void vks::VkEngine::handleMouseButtonDown(int buttonIndex) {}
-void vks::VkEngine::handleMouseButtonUp(int buttonIndex) {}
+void vke::engine_t::handleMouseButtonDown(int buttonIndex) {}
+void vke::engine_t::handleMouseButtonUp(int buttonIndex) {}
 

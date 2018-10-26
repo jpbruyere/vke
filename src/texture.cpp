@@ -2,10 +2,11 @@
 #include "VulkanDevice.hpp"
 #include "VulkanBuffer.hpp"
 #include "stb_image.h"
+#include "macros.h"
 
-namespace vks
+namespace vke
 {
-    void Texture::create (ptrVkDev _device,
+    void Texture::create (device_t* _device,
                     VkImageType imageType, VkFormat format, uint32_t width, uint32_t height,
                     VkImageUsageFlags usage, VkMemoryPropertyFlags memProps,
                     VkImageTiling tiling,
@@ -40,7 +41,7 @@ namespace vks
         VK_CHECK_RESULT(vkBindImageMemory(device->dev, image, deviceMemory, 0));
     }
     Texture::Texture (){}
-    Texture::Texture (ptrVkDev  _device, VkFormat _format, VkImage importedImg, uint32_t width, uint32_t height,
+    Texture::Texture (device_t*  _device, VkFormat _format, VkImage importedImg, uint32_t width, uint32_t height,
                       VkSampleCountFlagBits samples, uint32_t mipLevels, uint32_t arrayLayers){
         device = _device;
         image = importedImg;
@@ -51,7 +52,7 @@ namespace vks
         infos.mipLevels = mipLevels;
         infos.arrayLayers = arrayLayers;
     }
-    Texture::Texture (ptrVkDev  _device,
+    Texture::Texture (device_t*  _device,
                  VkImageType imageType, VkFormat format, uint32_t width, uint32_t height,
                  VkImageUsageFlags usage, VkMemoryPropertyFlags memProps, VkImageTiling tiling,
                  uint32_t  mipLevels, uint32_t arrayLayers,
@@ -63,7 +64,7 @@ namespace vks
         create(_device, imageType, format, width, height, usage, memProps, tiling, mipLevels, arrayLayers,
                flags, samples, initialLayout, sharingMode);
     }
-    Texture::Texture (ptrVkDev  _device,  VkQueue copyQueue, VkImageType imageType, VkFormat format,
+    Texture::Texture (device_t*  _device,  VkQueue copyQueue, VkImageType imageType, VkFormat format,
              std::vector<Texture> texArray, uint32_t width, uint32_t height,
              VkImageUsageFlags _usage) {
 
@@ -281,8 +282,7 @@ namespace vks
     }
 
     void Texture::copyTo (VkQueue copyQueue, unsigned char* buffer, VkDeviceSize bufferSize) {
-        Buffer stagingBuffer;
-        stagingBuffer.create (device, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        buffer_t stagingBuffer (device, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                               bufferSize, buffer);
 
@@ -305,8 +305,6 @@ namespace vks
                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
         device->flushCommandBuffer(copyCmd, copyQueue, true);
-
-        stagingBuffer.destroy();
     }
     void Texture::createView (VkImageViewType viewType, VkImageAspectFlags aspectMask,
                      uint32_t levelCount, uint32_t layerCount, VkComponentMapping components) {
@@ -381,7 +379,7 @@ namespace vks
         device->flushCommandBuffer(blitCmd, copyQueue, true);
     }
     void Texture::loadStbLinearNoSampling (std::string filename,
-        ptrVkDev device,
+        device_t* device,
         VkImageUsageFlags imageUsageFlags, bool flipY)
     {
         device = device;
