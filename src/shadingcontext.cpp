@@ -1,7 +1,7 @@
 #include "shadingcontext.hpp"
 #include "VulkanDevice.hpp"
 #include "resource.hpp"
-#include "macros.h"
+#include "macros.hpp"
 
 namespace vke {
     ShadingContext::ShadingContext(device_t* _device, uint32_t maxDescriptorSet) {

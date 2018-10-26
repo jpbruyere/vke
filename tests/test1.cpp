@@ -1,7 +1,7 @@
-#include "vke.h"
+#include "vke.hpp"
 #include "camera.hpp"
-#include "phyInfos.h"
-#include "pbrrenderer2.h"
+#include "phyInfos.hpp"
+#include "pbrrenderer2.hpp"
 #include "VulkanSwapChain.hpp"
 
 class Test : public vke::engine_t
@@ -16,9 +16,10 @@ public:
         camera->type = vke::Camera::CameraType::firstperson;
         camera->movementSpeed = 8.0f;
         camera->rotationSpeed = 0.25f;
-        camera->setPerspective(50.0f, (float)width / (float)height, 0.1f, 50.0f);
-        camera->setRotation({ 42.0f, 0.0f, 0.0f });
-        camera->setPosition({ .0f, -12.f, -15.f });
+        camera->setPerspective(45.0f, (float)width / (float)height, 0.1f, 256.0f);
+        camera->setRotation({ .0f, 0.0f, 2.5f });
+        camera->setPosition({ .0f, .0f, 0.f });
+
 
         settings.validation = true;
 
@@ -40,9 +41,11 @@ public:
         sceneRenderer->models.resize(1);
         mod = &sceneRenderer->models[0];
 
-        mod->loadFromFile ("data/models/chess.gltf", device, true);
+        //mod->loadFromFile ("data/models/chess.gltf", device, true);
+        mod->loadFromFile ("data/models/DamagedHelmet/glTF-Embedded/DamagedHelmet.gltf", device, true);
 
-        mod->addInstance("frame", glm::translate(glm::mat4(1.0),       glm::vec3( 0,0,0)));
+        //mod->addInstance("frame", glm::translate(glm::mat4(1.0),       glm::vec3( 0,0,0)));
+        mod->addOneInstanceOfEach();
 
         sceneRenderer->prepareModels();
         sceneRenderer->buildCommandBuffer();

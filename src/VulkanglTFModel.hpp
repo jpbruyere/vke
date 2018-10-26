@@ -14,9 +14,10 @@
 #include <vector>
 #include <map>
 
-#include <vke.h>
+#include "vke.hpp"
+#include "macros.hpp"
 
-#include "vkrenderer.h"
+#include "vkrenderer.hpp"
 #include "shadingcontext.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
@@ -31,7 +32,7 @@
 //when mipLevels is set to 0 => mipmaps with be generated
 #define AUTOGEN_MIPMAPS 0
 
-#include "VulkanBuffer.hpp"
+#include "buffer.hpp"
 
 namespace vkglTF
 {

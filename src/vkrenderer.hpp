@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vke.h"
+#include "vke.hpp"
 
 #define DRAW_FENCE_TIMEOUT 99900000
 

@@ -13,7 +13,7 @@
 #include "VulkanSwapChain.hpp"
 #include "VulkanDevice.hpp"
 #include "rendertarget.hpp"
-#include "macros.h"
+#include "macros.hpp"
 
 vke::swap_chain_t::swap_chain_t(engine_t *_vke, bool vsync) {
     vke = _vke;

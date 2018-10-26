@@ -1,8 +1,8 @@
 #pragma once
 
-#include "VkEngine.h"
-#include "vkrenderer.h"
-#include "VulkanTexture.hpp"
+#include "vke.hpp"
+#include "vkrenderer.hpp"
+#include "texture.hpp"
 #include "VulkanglTFModel.hpp"
 
 

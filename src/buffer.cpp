@@ -1,8 +1,8 @@
-#include "VulkanBuffer.hpp"
+#include "buffer.hpp"
 
 #include "VulkanDevice.hpp"
 #include "resource.hpp"
-#include "macros.h"
+#include "macros.hpp"
 
 namespace vke
 {

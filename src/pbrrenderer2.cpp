@@ -1,4 +1,4 @@
-#include "pbrrenderer2.h"
+#include "pbrrenderer2.hpp"
 #include "rendertarget.hpp"
 
 pbrRenderer::pbrRenderer () : vkRenderer()

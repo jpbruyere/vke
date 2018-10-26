@@ -10,8 +10,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "tiny_gltf.h"
 
-#include "vke.h"
-#include "macros.h"
+#include "vke.hpp"
+#include "macros.hpp"
 
 #define ENGINE_NAME     "vke"
 #define ENGINE_VERSION  1
@@ -19,7 +19,7 @@
 #include "VulkanDevice.hpp"
 
 #include "resource.hpp"
-#include "VulkanBuffer.hpp"
+#include "buffer.hpp"
 #include "texture.hpp"
 
 #include "shadingcontext.hpp"

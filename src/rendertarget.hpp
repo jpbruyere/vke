@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vke.h"
+#include "vke.hpp"
 #include "texture.hpp"
 
 namespace vke {

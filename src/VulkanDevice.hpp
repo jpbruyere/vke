@@ -10,8 +10,8 @@
 
 #pragma once
 
-#include "vke.h"
-#include "phyInfos.h"
+#include "vke.hpp"
+#include "phyInfos.hpp"
 
 namespace vke
 {

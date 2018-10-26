@@ -1,11 +1,11 @@
-#include "vkrenderer.h"
+#include "vkrenderer.hpp"
 //#include "pbrrenderer2.h"
 #include "VulkanDevice.hpp"
 #include "rendertarget.hpp"
 #include "VulkanSwapChain.hpp"
 #include "shadingcontext.hpp"
-#include "VulkanBuffer.hpp"
-#include "macros.h"
+#include "buffer.hpp"
+#include "macros.hpp"
 
 const VkPipelineStageFlags stageFlags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 

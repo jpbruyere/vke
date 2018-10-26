@@ -1,8 +1,8 @@
 #include "texture.hpp"
 #include "VulkanDevice.hpp"
-#include "VulkanBuffer.hpp"
+#include "buffer.hpp"
 #include "stb_image.h"
-#include "macros.h"
+#include "macros.hpp"
 
 namespace vke
 {

@@ -2,8 +2,8 @@
 
 #include "VulkanDevice.hpp"
 #include "VulkanSwapChain.hpp"
-#include "VulkanBuffer.hpp"
-#include "macros.h"
+#include "buffer.hpp"
+#include "macros.hpp"
 
 vke::render_target_t::render_target_t(device_t* _device, VkSampleCountFlagBits _samples) {
     device = _device;

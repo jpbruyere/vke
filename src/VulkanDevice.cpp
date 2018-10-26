@@ -1,5 +1,5 @@
 #include "VulkanDevice.hpp"
-#include "macros.h"
+#include "macros.hpp"
 namespace vke {
 
     device_t::device_t(vkPhyInfo *phyInfos, const std::vector<const char*>& devLayers)
