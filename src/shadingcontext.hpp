@@ -2,7 +2,7 @@
 
 #include "VkEngine.h"
 
-namespace vks {
+namespace vke {
     struct BindingSlot {
         uint layoutIdx;
         uint descriptorIdx;
@@ -12,7 +12,7 @@ namespace vks {
     //should be thread safe with dedicate desc and cmd pools
     class ShadingContext
     {
-        vks::VulkanDevice*					device;
+        vke::VulkanDevice*					device;
         VkDescriptorPool					descriptorPool;
         VkCommandPool                       cmdPool;//?
 
@@ -24,7 +24,7 @@ namespace vks {
     public:
         std::vector<VkDescriptorSetLayout>	layouts;
 
-        ShadingContext(vks::VulkanDevice* _device, uint32_t maxDescriptorSet = 1) {
+        ShadingContext(vke::VulkanDevice* _device, uint32_t maxDescriptorSet = 1) {
             device = _device;
             maxSets = maxDescriptorSet;
         }

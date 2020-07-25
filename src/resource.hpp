@@ -2,7 +2,7 @@
 
 #include "vke.h"
 
-namespace vks {
+namespace vke {
     struct Resource
     {
         ptrVkDev                device;

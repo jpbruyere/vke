@@ -4,12 +4,12 @@
 #include "VulkanSwapChain.hpp"
 
 
-vks::RenderTarget::RenderTarget(ptrVkDev _device, VkSampleCountFlagBits _samples) {
+vke::RenderTarget::RenderTarget(ptrVkDev _device, VkSampleCountFlagBits _samples) {
     device = _device;
     samples = _samples;
 }
 
-vks::RenderTarget::~RenderTarget () {
+vke::RenderTarget::~RenderTarget () {
     if (swapChain)
         swapChain->boundRenderTargets.erase(std::remove(swapChain->boundRenderTargets.begin(),
                 swapChain->boundRenderTargets.end(), this), swapChain->boundRenderTargets.end());
@@ -24,21 +24,21 @@ vks::RenderTarget::~RenderTarget () {
 }
 
 /** @brief destroy texture objects */
-void vks::RenderTarget::cleanupAttachments () {
+void vke::RenderTarget::cleanupAttachments () {
     for(uint i=0; i<attachments.size(); i++)
         if (i!=presentableAttachment)
             attachments[i].destroy();
     attachments.clear();
 }
 
-void vks::RenderTarget::createDefaultOffscreenTarget (uint32_t _width, uint32_t _height, VkFormat _colorFormat, VkFormat _depthFormat) {
+void vke::RenderTarget::createDefaultOffscreenTarget (uint32_t _width, uint32_t _height, VkFormat _colorFormat, VkFormat _depthFormat) {
     width   = _width;
     height  = _height;
 
     createAttachments (swapChain->infos.imageFormat, swapChain->depthFormat);
 
 }
-void vks::RenderTarget::createDefaultPresentableTarget (ptrSwapchain _swapChain) {
+void vke::RenderTarget::createDefaultPresentableTarget (ptrSwapchain _swapChain) {
     swapChain = _swapChain;
     swapChain->boundRenderTargets.push_back (this);
 
@@ -50,7 +50,7 @@ void vks::RenderTarget::createDefaultPresentableTarget (ptrSwapchain _swapChain)
     createFrameBuffers();
 }
 
-void vks::RenderTarget::updateSize () {
+void vke::RenderTarget::updateSize () {
     for (uint32_t i = 0; i < frameBuffers.size(); i++)
         vkDestroyFramebuffer(swapChain->vke->device->dev, frameBuffers[i], nullptr);
 
@@ -62,19 +62,19 @@ void vks::RenderTarget::updateSize () {
     createAttachments (swapChain->infos.imageFormat, swapChain->depthFormat);
 }
 
-void vks::RenderTarget::createAttachments (VkFormat _colorFormat, VkFormat _depthFormat) {
+void vke::RenderTarget::createAttachments (VkFormat _colorFormat, VkFormat _depthFormat) {
     if (samples > VK_SAMPLE_COUNT_1_BIT) {
         attachments.resize(3);
         presentableAttachment = 2;
 
-        attachments[0] = vks::Texture(device, VK_IMAGE_TYPE_2D, _colorFormat,
+        attachments[0] = vke::Texture(device, VK_IMAGE_TYPE_2D, _colorFormat,
                                       width, height,
                                       VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_TILING_OPTIMAL, 1, 1, 0,
                                       samples);
         attachments[0].createView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT,1,1);
 
-        attachments[1] = vks::Texture(device, VK_IMAGE_TYPE_2D, _depthFormat,
+        attachments[1] = vke::Texture(device, VK_IMAGE_TYPE_2D, _depthFormat,
                                       width, height,
                                       VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_TILING_OPTIMAL, 1, 1, 0,
@@ -83,14 +83,14 @@ void vks::RenderTarget::createAttachments (VkFormat _colorFormat, VkFormat _dept
     }else {
         attachments.resize(2);
         presentableAttachment = 0;
-        attachments[1] = vks::Texture(device, VK_IMAGE_TYPE_2D, _depthFormat,
+        attachments[1] = vke::Texture(device, VK_IMAGE_TYPE_2D, _depthFormat,
                                       width, height,
                                       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
         attachments[1].createView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_DEPTH_BIT|VK_IMAGE_ASPECT_STENCIL_BIT);
     }
 }
 
-void vks::RenderTarget::createFrameBuffers()
+void vke::RenderTarget::createFrameBuffers()
 {
     std::vector<VkImageView> views;
     views.resize(attachments.size());
@@ -120,7 +120,7 @@ void vks::RenderTarget::createFrameBuffers()
     }
 }
 
-void vks::RenderTarget::createDefaultRenderPass () {
+void vke::RenderTarget::createDefaultRenderPass () {
     VkAttachmentDescription rpAttachments[] = {
         {0, //color
             attachments[0].infos.format, samples,

@@ -2,6 +2,7 @@
 
 pbrRenderer::pbrRenderer () : vkRenderer()
 {
+    showOverlay = false;
 }
 
 pbrRenderer::~pbrRenderer() {
@@ -31,7 +32,7 @@ void pbrRenderer::prepareModels() {
 }
 
 void pbrRenderer::configurePipelineLayout () {
-    shadingCtx = new vks::ShadingContext (device, 3);
+    shadingCtx = new vke::ShadingContext (device, 3);
 
     shadingCtx->addDescriptorSetLayout(
         {//scene
@@ -251,6 +252,8 @@ void pbrRenderer::draw(VkCommandBuffer cmdBuff) {
     vkCmdBindPipeline(cmdBuff, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelines.pbr);
     models[0].buildCommandBuffer (cmdBuff, pipelineLayout);
 
+    if (!showOverlay)
+        return;
     //full screen quad
     fullScreenTex.setImageLayout(cmdBuff, VK_IMAGE_ASPECT_COLOR_BIT,
                                  VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
@@ -528,7 +531,7 @@ void pbrRenderer::generateCubemaps()
 
     for (uint32_t target = 0; target < PREFILTEREDENV + 1; target++) {
 
-        vks::TextureCubeMap cubemap;
+        vke::TextureCubeMap cubemap;
 
         auto tStart = std::chrono::high_resolution_clock::now();
 

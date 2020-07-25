@@ -121,7 +121,7 @@ std::array<bmchar, 255> parsebmFont(const std::string& fileName)
     return fontChars;
 }
 
-std::vector<const char*> vks::VkEngine::args;
+std::vector<const char*> vke::VkEngine::args;
 
 VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t srcObject, size_t location, int32_t msgCode, const char * pLayerPrefix, const char * pMsg, void * pUserData)
 {
@@ -146,7 +146,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugMessageCallback(VkDebugReportFlagsEXT flags,
     return VK_FALSE;
 }
 
-std::string vks::VkEngine::getWindowTitle()
+std::string vke::VkEngine::getWindowTitle()
 {
     std::string device(this->device->properties.deviceName);
     std::string windowTitle;
@@ -155,21 +155,21 @@ std::string vks::VkEngine::getWindowTitle()
 }
 
 static void onkey_callback (GLFWwindow* window, int key, int scanCode, int action ,int mods){
-    vks::VkEngine* e = (vks::VkEngine*)glfwGetWindowUserPointer(window);
+    vke::VkEngine* e = (vke::VkEngine*)glfwGetWindowUserPointer(window);
     if (action == GLFW_PRESS)
         e->keyDown(key);
     else
         e->keyUp(key);
 }
 static void char_callback (GLFWwindow* window, uint32_t c){
-    vks::VkEngine* e = (vks::VkEngine*)glfwGetWindowUserPointer(window);
+    vke::VkEngine* e = (vke::VkEngine*)glfwGetWindowUserPointer(window);
 }
 static void mouse_move_callback(GLFWwindow* window, double x, double y){
-    vks::VkEngine* e = (vks::VkEngine*)glfwGetWindowUserPointer(window);
+    vke::VkEngine* e = (vke::VkEngine*)glfwGetWindowUserPointer(window);
     e->handleMouseMove((int32_t)x, (int32_t)y);
 }
 static void mouse_button_callback(GLFWwindow* window, int but, int state, int modif){
-    vks::VkEngine* e = (vks::VkEngine*)glfwGetWindowUserPointer(window);
+    vke::VkEngine* e = (vke::VkEngine*)glfwGetWindowUserPointer(window);
     if (state == GLFW_PRESS){
         e->mouseButtons[but] = true;
         e->handleMouseButtonDown(but);
@@ -179,7 +179,7 @@ static void mouse_button_callback(GLFWwindow* window, int but, int state, int mo
     }
 }
 
-vks::VkEngine::VkEngine (uint32_t _width, uint32_t _height,
+vke::VkEngine::VkEngine (uint32_t _width, uint32_t _height,
                     VkPhysicalDeviceType preferedGPU)
 {
     width = _width;
@@ -241,7 +241,7 @@ vks::VkEngine::VkEngine (uint32_t _width, uint32_t _height,
     VK_CHECK_RESULT(vkEnumeratePhysicalDevices(instance, &phyCount, physicalDevices.data()));
 
     for (uint i=0; i<phyCount; i++){
-        phyInfos = vks::vkPhyInfo(physicalDevices[i], surface);
+        phyInfos = vke::vkPhyInfo(physicalDevices[i], surface);
         if (phyInfos.properties.deviceType == preferedGPU)
             break;
     }
@@ -249,7 +249,7 @@ vks::VkEngine::VkEngine (uint32_t _width, uint32_t _height,
 }
 
 
-vks::VkEngine::~VkEngine()
+vke::VkEngine::~VkEngine()
 {
     sharedUBOs.matrices.destroy();
     sharedUBOs.params.destroy();
@@ -270,15 +270,15 @@ vks::VkEngine::~VkEngine()
     vkDestroyInstance (instance, VK_NULL_HANDLE);
 }
 
-void vks::VkEngine::start () {
+void vke::VkEngine::start () {
     std::vector<const char*> devLayers;
 
-#if DEBUG
-    if (settings.validation)
-        devLayers.push_back ("VK_LAYER_LUNARG_standard_validation");
-#endif
+//#if DEBUG
+//    if (settings.validation)
+//        devLayers.push_back ("VK_LAYER_KHRONOS_validation");
+//#endif
 
-    device  = new vks::VulkanDevice (phyInfos, devLayers);
+    device  = new vke::VulkanDevice (phyInfos, devLayers);
 
     swapChain = new VulkanSwapChain (this, false);
     swapChain->create (width, height);
@@ -321,9 +321,9 @@ void vks::VkEngine::start () {
     }
 }
 
-void vks::VkEngine::prepare(){}
+void vke::VkEngine::prepare(){}
 
-void vks::VkEngine::prepareFrame()
+void vke::VkEngine::prepareFrame()
 {
     VkResult err = swapChain->acquireNextImage (device->dev);
     if ((err == VK_ERROR_OUT_OF_DATE_KHR) || (err == VK_SUBOPTIMAL_KHR)) {
@@ -333,20 +333,22 @@ void vks::VkEngine::prepareFrame()
     }
 }
 
-void vks::VkEngine::createInstance (const std::string& app_name, std::vector<const char*>& extentions) {
+void vke::VkEngine::createInstance (const std::string& app_name, std::vector<const char*>& extentions) {
     VkApplicationInfo   infos = {VK_STRUCTURE_TYPE_APPLICATION_INFO};
                         infos.pApplicationName  = app_name.c_str();
                         infos.applicationVersion= 1;
                         infos.pEngineName       = ENGINE_NAME;
                         infos.engineVersion     = ENGINE_VERSION;
-                        infos.apiVersion        = VK_API_VERSION_1_0;
+                        infos.apiVersion        = VK_API_VERSION_1_1;
 
 
     std::vector<const char*> enabledLayers;
 
 #if DEBUG
     if (settings.validation)
-        enabledLayers.push_back ("VK_LAYER_LUNARG_standard_validation");
+        enabledLayers.push_back ("VK_LAYER_KHRONOS_validation");
+    enabledLayers.push_back ("VK_LAYER_RENDERDOC_Capture");
+
 #endif
 
     VkInstanceCreateInfo inst_info = {VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
@@ -361,7 +363,7 @@ void vks::VkEngine::createInstance (const std::string& app_name, std::vector<con
 }
 
 
-//void vks::VkEngine::handleEvent(const xcb_generic_event_t *event)
+//void vke::VkEngine::handleEvent(const xcb_generic_event_t *event)
 //{
 //    switch (event->response_type & 0x7f)
 //    {
@@ -487,11 +489,11 @@ void vks::VkEngine::createInstance (const std::string& app_name, std::vector<con
 //}
 
 
-void vks::VkEngine::viewChanged() {
+void vke::VkEngine::viewChanged() {
     updateUniformBuffers();
 }
 
-void vks::VkEngine::prepareUniformBuffers()
+void vke::VkEngine::prepareUniformBuffers()
 {
     // Objact vertex shader uniform buffer
     sharedUBOs.matrices.create(device,
@@ -512,7 +514,7 @@ void vks::VkEngine::prepareUniformBuffers()
     updateUniformBuffers();
     updateParams();
 }
-void vks::VkEngine::updateUniformBuffers()
+void vke::VkEngine::updateUniformBuffers()
 {
     // 3D object
     mvpMatrices.projection = camera.matrices.perspective;
@@ -521,13 +523,13 @@ void vks::VkEngine::updateUniformBuffers()
     mvpMatrices.camPos = camera.position * -1.0f;
     sharedUBOs.matrices.copyTo (&mvpMatrices, sizeof(mvpMatrices));
 }
-void vks::VkEngine::updateParams()
+void vke::VkEngine::updateParams()
 {
     lightingParams.lightDir = glm::vec4(-10.0f, 150.f, -10.f, 1.0f);
     sharedUBOs.params.copyTo(&lightingParams, sizeof(lightingParams));
 }
 
-void vks::VkEngine::windowResize()
+void vke::VkEngine::windowResize()
 {
     if (!prepared)
         return;
@@ -545,7 +547,7 @@ void vks::VkEngine::windowResize()
     prepared = true;
 }
 
-void vks::VkEngine::keyDown(uint32_t key) {
+void vke::VkEngine::keyDown(uint32_t key) {
     switch (key) {
     case GLFW_KEY_ESCAPE :
         glfwSetWindowShouldClose(window, GLFW_TRUE);
@@ -553,10 +555,10 @@ void vks::VkEngine::keyDown(uint32_t key) {
     }
 
 }
-void vks::VkEngine::keyUp(uint32_t key) {
+void vke::VkEngine::keyUp(uint32_t key) {
     keyPressed (key);
 }
-void vks::VkEngine::keyPressed(uint32_t key) {
+void vke::VkEngine::keyPressed(uint32_t key) {
     switch (key) {
     case GLFW_KEY_F1:
         if (lightingParams.exposure > 0.1f) {
@@ -588,7 +590,7 @@ void vks::VkEngine::keyPressed(uint32_t key) {
         break;
     }
 }
-void vks::VkEngine::handleMouseMove(int32_t x, int32_t y)
+void vke::VkEngine::handleMouseMove(int32_t x, int32_t y)
 {
     int32_t dx = (int32_t)mousePos.x - x;
     int32_t dy = (int32_t)mousePos.y - y;
@@ -610,6 +612,6 @@ void vks::VkEngine::handleMouseMove(int32_t x, int32_t y)
     }
     mousePos = glm::vec2((float)x, (float)y);
 }
-void vks::VkEngine::handleMouseButtonDown(int buttonIndex) {}
-void vks::VkEngine::handleMouseButtonUp(int buttonIndex) {}
+void vke::VkEngine::handleMouseButtonDown(int buttonIndex) {}
+void vke::VkEngine::handleMouseButtonUp(int buttonIndex) {}
 

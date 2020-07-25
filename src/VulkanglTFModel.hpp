@@ -1,4 +1,4 @@
-/*
+﻿/*
 * Vulkan glTF model and texture loading class based on tinyglTF (https://github.com/syoyo/tinygltf)
 *
 * Copyright (C) 2018 by Sascha Willems - www.saschawillems.de
@@ -101,24 +101,24 @@ namespace vkglTF
             glm::vec2 uv;
         };
 
-        vks::VulkanDevice*  device;
+        vke::VulkanDevice*  device;
 
         //vertices list are kept for meshLoading only (usefull for bullet lowpoly meshes without texture or material
         //their are cleared for normal loading
         std::vector<uint32_t>       indices;
         std::vector<Vertex>         vertices;
-        std::vector<vks::Texture>   textures;
+        std::vector<vke::Texture>   textures;
         std::vector<Material>       materials;
         std::map<std::string, int>  materialsNames;
         std::vector<uint32_t>       instances;//TODO:should store part idx and count
         std::vector<InstanceData>   instanceDatas;
 
-        vks::Buffer     vbo;
-        vks::Buffer     ibo;
-        vks::Buffer     vboInstances;
-        vks::Buffer     uboMaterials;
+        vke::Buffer     vbo;
+        vke::Buffer     ibo;
+        vke::Buffer     vboInstances;
+        vke::Buffer     uboMaterials;
 
-        vks::Texture*   texAtlas        = NULL;//array of all textuures used by model
+        vke::Texture*   texAtlas        = NULL;//array of all textuures used by model
         VkDescriptorSet descriptorSet   = VK_NULL_HANDLE;//atlas sampler and materials ubo, defined by pbr renderer
 
         std::vector<Primitive> primitives;
@@ -135,7 +135,7 @@ namespace vkglTF
                 delete (texAtlas);
             }
 
-            for (vks::Texture texture : textures)
+            for (vke::Texture texture : textures)
                 texture.destroy();
         }
 
@@ -165,9 +165,8 @@ namespace vkglTF
             localNodeMatrix = parentMatrix * localNodeMatrix;
 
             // Parent node with children
-            if (node.children.size() > 0)
-                for (uint i = 0; i < node.children.size(); i++)
-                    loadNode(model.nodes[node.children[i]], localNodeMatrix, model, indexBuffer, vertexBuffer, globalscale);
+            for (uint i = 0; i < node.children.size(); i++)
+                loadNode(model.nodes[node.children[i]], localNodeMatrix, model, indexBuffer, vertexBuffer, globalscale);
 
             // Node contains mesh data
             if (node.mesh > -1) {
@@ -276,7 +275,7 @@ namespace vkglTF
             }
         }
 
-        void loadImages(tinygltf::Model &gltfModel, vks::VulkanDevice *device, VkQueue copyQueue, bool loadOnly = false)
+        void loadImages(tinygltf::Model &gltfModel, vke::VulkanDevice *device, VkQueue copyQueue, bool loadOnly = false)
         {
             for (tinygltf::Image &gltfimage : gltfModel.images) {
                 std::cout << "gltf image loading: " << gltfimage.name << std::endl << std::flush;
@@ -317,7 +316,7 @@ namespace vkglTF
                 uint32_t mipLevels = loadOnly ? 1 :
                             static_cast<uint32_t>(floor(log2(std::max(gltfimage.width, gltfimage.height))) + 1.0);
 
-                vks::Texture texture;
+                vke::Texture texture;
 
                 texture.create(device,
                        VK_IMAGE_TYPE_2D,VK_FORMAT_R8G8B8A8_UNORM, gltfimage.width, gltfimage.height,
@@ -394,7 +393,7 @@ namespace vkglTF
             }
         }
 
-        void loadFromFile(std::string filename, vks::VulkanDevice* _device,
+        void loadFromFile(std::string filename, vke::VulkanDevice* _device,
                           bool instancedRendering = false, float scale = 1.0f, bool meshOnly = false)
         {
             device = _device;//should be set in CTOR
@@ -422,8 +421,8 @@ namespace vkglTF
                 if (!meshOnly) {
                     loadImages(gltfModel, device, device->queue, instancedRendering);
                     if (instancedRendering){
-                        texAtlas = new vks::Texture(device, device->queue, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, textures, textureSize, textureSize);
-                        for (vks::Texture texture : textures){
+                        texAtlas = new vke::Texture(device, device->queue, VK_IMAGE_TYPE_2D, VK_FORMAT_R8G8B8A8_UNORM, textures, textureSize, textureSize);
+                        for (vke::Texture texture : textures){
                             texture.destroy();
                         }
                         textures.clear();
@@ -453,7 +452,7 @@ namespace vkglTF
 
             assert((vertexBufferSize > 0) && (indexBufferSize > 0));
 
-            vks::Buffer vertexStaging, indexStaging;
+            vke::Buffer vertexStaging, indexStaging;
             vertexStaging.create (device,
                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -528,7 +527,7 @@ namespace vkglTF
             std::map<std::string, int>::iterator it = materialsNames.find(_name);
             return it == materialsNames.end() ? -1 : it->second;
         }
-        void allocateDescriptorSet (vks::ShadingContext* shadingCtx) {
+        void allocateDescriptorSet (vke::ShadingContext* shadingCtx) {
             descriptorSet = shadingCtx->allocateDescriptorSet(1);
 
             shadingCtx->updateDescriptorSet (descriptorSet,

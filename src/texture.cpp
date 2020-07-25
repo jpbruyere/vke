@@ -3,7 +3,7 @@
 #include "VulkanBuffer.hpp"
 #include "stb_image.h"
 
-namespace vks
+namespace vke
 {
     void Texture::create (ptrVkDev _device,
                     VkImageType imageType, VkFormat format, uint32_t width, uint32_t height,
@@ -73,7 +73,13 @@ namespace vks
                VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | _usage,
                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_TILING_OPTIMAL, mipLevels, texArray.size());
 
-        VkCommandBuffer blitCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+        VkCommandBuffer blitCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true, true);
+
+        setImageLayout(blitCmd,
+                VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                {VK_IMAGE_ASPECT_COLOR_BIT,0,(uint)texArray.size(),0,1},
+                VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
         //imageLayout = _imageLayout;
         for (uint l = 0; l < texArray.size(); l++) {
@@ -89,24 +95,25 @@ namespace vks
 
             VkImageSubresourceRange mipSubRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, l, 1};
 
-            inTex->setImageLayout(blitCmd, VK_IMAGE_LAYOUT_UNDEFINED,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            inTex->setImageLayout(blitCmd,
+                    VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
+                    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                     {VK_IMAGE_ASPECT_COLOR_BIT,0,1,0,1},
-                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-            // Transiton current array level to transfer dest
-            setImageLayout(blitCmd, VK_IMAGE_LAYOUT_UNDEFINED,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                    mipSubRange,
                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
             vkCmdBlitImage(blitCmd, inTex->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &firstMipBlit, VK_FILTER_LINEAR);
-
-            setImageLayout(blitCmd, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, mipSubRange,
-                                    VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
             /*setImageLayout(blitCmd, VK_IMAGE_LAYOUT_UNDEFINED,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                     mipSubRange,
                     VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);*/
         }
-        //device->flushCommandBuffer(blitCmd, copyQueue, true);
+
+        setImageLayout(blitCmd,
+                       VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
+                       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                       {VK_IMAGE_ASPECT_COLOR_BIT,0,(uint)texArray.size(),0,1},
+                       VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
         buildMipmaps(copyQueue, blitCmd);
 
         device->flushCommandBuffer(blitCmd, copyQueue, true);
@@ -157,6 +164,9 @@ namespace vks
     {
         // Create an image barrier object
         VkImageMemoryBarrier imageMemoryBarrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+        imageMemoryBarrier.pNext = VK_NULL_HANDLE;
+        imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         imageMemoryBarrier.oldLayout = oldImageLayout;
         imageMemoryBarrier.newLayout = newImageLayout;
         imageMemoryBarrier.image = image;
@@ -280,6 +290,49 @@ namespace vks
         setImageLayout(cmdbuffer, oldImageLayout, newImageLayout, {aspectMask,0,1,0,1}, srcStageMask, dstStageMask);
     }
 
+    void Texture::setImageLayout(
+        VkCommandBuffer cmdbuffer,
+        VkImageAspectFlags aspectMask,
+        VkAccessFlags srcAccessMask,
+        VkAccessFlags dstAccessMask,
+        VkImageLayout oldImageLayout,
+        VkImageLayout newImageLayout,
+        VkPipelineStageFlags srcStageMask,
+        VkPipelineStageFlags dstStageMask)
+    {
+        setImageLayout(cmdbuffer, srcAccessMask, dstAccessMask,  oldImageLayout, newImageLayout, {aspectMask,0,1,0,1}, srcStageMask, dstStageMask);
+    }
+    void Texture::setImageLayout(
+            VkCommandBuffer cmdbuffer,
+            VkAccessFlags srcAccessMask,
+            VkAccessFlags dstAccessMask,
+            VkImageLayout oldImageLayout,
+            VkImageLayout newImageLayout,
+            VkImageSubresourceRange subresourceRange,
+            VkPipelineStageFlags srcStageMask,
+            VkPipelineStageFlags dstStageMask){
+
+        VkImageMemoryBarrier imageMemoryBarrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+        imageMemoryBarrier.pNext = VK_NULL_HANDLE;
+        imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        imageMemoryBarrier.srcAccessMask = srcAccessMask;
+        imageMemoryBarrier.dstAccessMask = dstAccessMask;
+        imageMemoryBarrier.oldLayout = oldImageLayout;
+        imageMemoryBarrier.newLayout = newImageLayout;
+        imageMemoryBarrier.image = image;
+        imageMemoryBarrier.subresourceRange = subresourceRange;
+
+        vkCmdPipelineBarrier(
+            cmdbuffer,
+            srcStageMask,
+            dstStageMask,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &imageMemoryBarrier);
+    }
+
     void Texture::copyTo (VkQueue copyQueue, unsigned char* buffer, VkDeviceSize bufferSize) {
         Buffer stagingBuffer;
         stagingBuffer.create (device, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -288,9 +341,10 @@ namespace vks
 
         descriptor.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-        VkCommandBuffer copyCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+        VkCommandBuffer copyCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true, true);
 
         setImageLayout (copyCmd, VK_IMAGE_ASPECT_COLOR_BIT,
+                       VK_ACCESS_HOST_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
                        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
@@ -301,6 +355,7 @@ namespace vks
         vkCmdCopyBufferToImage(copyCmd, stagingBuffer.buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &bufferCopyRegion);
 
         setImageLayout(copyCmd, VK_IMAGE_ASPECT_COLOR_BIT,
+                       VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
                        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 

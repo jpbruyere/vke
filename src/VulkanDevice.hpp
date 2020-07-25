@@ -14,7 +14,7 @@
 
 //#include "VulkanBuffer.hpp"
 
-namespace vks
+namespace vke
 {
     struct vkPhyInfo{
         VkPhysicalDevice                    phy;
@@ -141,7 +141,7 @@ namespace vks
 
         VkCommandPool createCommandPool(uint32_t queueFamilyIndex,
                                         VkCommandPoolCreateFlags createFlags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-        VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, bool begin = false);
+        VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, bool begin = false, bool oneTime = false);
 
         void flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free = true);
         VkSemaphore createSemaphore ();

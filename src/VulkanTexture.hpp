@@ -26,14 +26,14 @@
 #include <android/asset_manager.h>
 #endif
 
-namespace vks
+namespace vke
 {
     class Texture2D : public Texture {
     public:
         void loadFromFile(
             std::string filename,
             VkFormat format,
-            vks::VulkanDevice *_device,
+            vke::VulkanDevice *_device,
             VkQueue copyQueue,
             VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
             VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
@@ -79,7 +79,7 @@ namespace vks
     public:
         void buildFromImages(const std::vector<std::string>& mapDic, uint32_t textureSize,
                              VkFormat _format,
-                             vks::VulkanDevice *_device,
+                             vke::VulkanDevice *_device,
                              VkQueue copyQueue,
                              VkImageUsageFlags _imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
                              VkImageLayout _imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL){
@@ -173,7 +173,7 @@ namespace vks
         void loadFromFile(
             std::string filename,
             VkFormat format,
-            vks::VulkanDevice *_device,
+            vke::VulkanDevice *_device,
             VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT,
             VkImageLayout _imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
         {
@@ -207,7 +207,7 @@ namespace vks
 
             imageLayout = _imageLayout;
 
-            vks::Buffer stagingBuffer;
+            vke::Buffer stagingBuffer;
             stagingBuffer.create (device,
                 VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,

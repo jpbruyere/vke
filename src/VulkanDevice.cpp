@@ -1,6 +1,6 @@
 #include "VulkanDevice.hpp"
 
-vks::VulkanDevice::VulkanDevice(vkPhyInfo phyInfos, const std::vector<const char*>& devLayers)
+vke::VulkanDevice::VulkanDevice(vkPhyInfo phyInfos, const std::vector<const char*>& devLayers)
 {
     phy = phyInfos.phy;
 
@@ -52,7 +52,7 @@ vks::VulkanDevice::VulkanDevice(vkPhyInfo phyInfos, const std::vector<const char
     delete[] buffer;
 }
 
-vks::VulkanDevice::~VulkanDevice()
+vke::VulkanDevice::~VulkanDevice()
 {
     if (pipelineCache){
         if (savePLCache){
@@ -74,7 +74,7 @@ vks::VulkanDevice::~VulkanDevice()
         vkDestroyDevice(dev, nullptr);
 }
 
-uint32_t vks::VulkanDevice::getMemoryType(uint32_t typeBits, VkMemoryPropertyFlags properties, VkBool32 *memTypeFound)
+uint32_t vke::VulkanDevice::getMemoryType(uint32_t typeBits, VkMemoryPropertyFlags properties, VkBool32 *memTypeFound)
 {
     for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
         if ((typeBits & 1) == 1) {
@@ -96,7 +96,7 @@ uint32_t vks::VulkanDevice::getMemoryType(uint32_t typeBits, VkMemoryPropertyFla
     }
 }
 
-VkFormat vks::VulkanDevice::getSuitableDepthFormat () {
+VkFormat vke::VulkanDevice::getSuitableDepthFormat () {
     std::vector<VkFormat> depthFormats = { VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM_S8_UINT, VK_FORMAT_D16_UNORM };
     for (auto& format : depthFormats) {
         VkFormatProperties formatProps;
@@ -108,7 +108,7 @@ VkFormat vks::VulkanDevice::getSuitableDepthFormat () {
     exit(-1);
 }
 
-uint32_t vks::VulkanDevice::getQueueFamilyIndex(VkQueueFlagBits queueFlags)
+uint32_t vke::VulkanDevice::getQueueFamilyIndex(VkQueueFlagBits queueFlags)
 {
     // Dedicated queue for compute
     // Try to find a queue family index that supports compute but not graphics
@@ -134,7 +134,7 @@ uint32_t vks::VulkanDevice::getQueueFamilyIndex(VkQueueFlagBits queueFlags)
 }
 
 
-VkCommandPool vks::VulkanDevice::createCommandPool(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags createFlags)
+VkCommandPool vke::VulkanDevice::createCommandPool(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags createFlags)
 {
     VkCommandPoolCreateInfo cmdPoolInfo = {};
     cmdPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -145,13 +145,14 @@ VkCommandPool vks::VulkanDevice::createCommandPool(uint32_t queueFamilyIndex, Vk
     return cmdPool;
 }
 
-VkCommandBuffer vks::VulkanDevice::createCommandBuffer(VkCommandBufferLevel level, bool begin)
+VkCommandBuffer vke::VulkanDevice::createCommandBuffer(VkCommandBufferLevel level, bool begin, bool oneTime)
 {
     VkCommandBufferAllocateInfo cmdBufAllocateInfo{};
     cmdBufAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     cmdBufAllocateInfo.commandPool = commandPool;
     cmdBufAllocateInfo.level = level;
     cmdBufAllocateInfo.commandBufferCount = 1;
+
 
     VkCommandBuffer cmdBuffer;
     VK_CHECK_RESULT(vkAllocateCommandBuffers(dev, &cmdBufAllocateInfo, &cmdBuffer));
@@ -160,13 +161,14 @@ VkCommandBuffer vks::VulkanDevice::createCommandBuffer(VkCommandBufferLevel leve
     if (begin) {
         VkCommandBufferBeginInfo cmdBufInfo{};
         cmdBufInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        cmdBufInfo.flags = oneTime ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : 0;
         VK_CHECK_RESULT(vkBeginCommandBuffer(cmdBuffer, &cmdBufInfo));
     }
 
     return cmdBuffer;
 }
 
-void vks::VulkanDevice::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free)
+void vke::VulkanDevice::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free)
 {
     VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
 
@@ -192,23 +194,23 @@ void vks::VulkanDevice::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueu
         vkFreeCommandBuffers(dev, commandPool, 1, &commandBuffer);
     }
 }
-VkSemaphore vks::VulkanDevice::createSemaphore ()
+VkSemaphore vke::VulkanDevice::createSemaphore ()
 {
     VkSemaphore sema = VK_NULL_HANDLE;
     VkSemaphoreCreateInfo semaphoreCreateInfo {VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
     VK_CHECK_RESULT(vkCreateSemaphore (dev, &semaphoreCreateInfo, nullptr, &sema));
     return sema;
 }
-VkFence vks::VulkanDevice::createFence (bool signaled) {
+VkFence vke::VulkanDevice::createFence (bool signaled) {
     VkFence fence = VK_NULL_HANDLE;
     VkFenceCreateInfo fenceCreateInfo {VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, VK_NULL_HANDLE,
-                signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0};
+                signaled ? VK_FENCE_CREATE_SIGNALED_BIT : (VkFenceCreateFlags)0};
     VK_CHECK_RESULT(vkCreateFence (dev, &fenceCreateInfo, nullptr, &fence));
     return fence;
 }
-void vks::VulkanDevice::destroyFence (VkFence fence) {
+void vke::VulkanDevice::destroyFence (VkFence fence) {
     vkDestroyFence (dev, fence, VK_NULL_HANDLE);
 }
-void vks::VulkanDevice::destroySemaphore (VkSemaphore semaphore) {
+void vke::VulkanDevice::destroySemaphore (VkSemaphore semaphore) {
     vkDestroySemaphore (dev, semaphore, VK_NULL_HANDLE);
 }

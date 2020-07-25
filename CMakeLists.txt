@@ -37,6 +37,7 @@ if (NOT TARGET vkh_static)
 endif()
 
 FIND_PACKAGE(Vulkan REQUIRED)
+#FIND_PACKAGE(GLI REQUIRED)
 #FIND_PACKAGE(GLFW3)
 
 FILE(GLOB SOURCES "src/*.cpp")
@@ -57,10 +58,12 @@ FUNCTION (setup_lib LibName)
 			${CMAKE_CURRENT_SOURCE_DIR}/include
 			${CMAKE_CURRENT_SOURCE_DIR}/src
 			${Vulkan_INCLUDE_DIRS}
+			#${GLI_INCLUDE_DIR}
 	)
 	TARGET_LINK_LIBRARIES(${LibName}
 		${Vulkan_LIBRARIES}
 		vkh_static
+		#${GLI_LIBRARY_DIR}
 		#${GLFW3_LIBRARY}
 	)
 	INSTALL(TARGETS ${LibName}
@@ -76,3 +79,4 @@ setup_lib ("${PROJECT_NAME}_static")
 ADD_LIBRARY("${PROJECT_NAME}_shared" SHARED ${SOURCES})
 SET_PROPERTY(TARGET "${PROJECT_NAME}_static" PROPERTY POSITION_INDEPENDENT_CODE ON)
 setup_lib ("${PROJECT_NAME}_shared")
+

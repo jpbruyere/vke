@@ -3,7 +3,7 @@
 #include "vke.h"
 #include "resource.hpp"
 
-namespace vks
+namespace vke
 {
     struct Texture : public Resource {
         VkImage             image       = VK_NULL_HANDLE;
@@ -62,6 +62,26 @@ namespace vks
             VkImageLayout newImageLayout,
             VkPipelineStageFlags srcStageMask,
             VkPipelineStageFlags dstStageMask);
+
+        void setImageLayout(
+                VkCommandBuffer cmdbuffer,
+                VkImageAspectFlags aspectMask,
+                VkAccessFlags srcAccessMask,
+                VkAccessFlags dstAccessMask,
+                VkImageLayout oldImageLayout,
+                VkImageLayout newImageLayout,
+                VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+
+        void setImageLayout(
+                VkCommandBuffer cmdbuffer,
+                VkAccessFlags srcAccessMask,
+                VkAccessFlags dstAccessMask,
+                VkImageLayout oldImageLayout,
+                VkImageLayout newImageLayout,
+                VkImageSubresourceRange subresourceRange,
+                VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
         void copyTo (VkQueue copyQueue, unsigned char* buffer, VkDeviceSize bufferSize);
         void createView (VkImageViewType viewType, VkImageAspectFlags aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,

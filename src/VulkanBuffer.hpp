@@ -15,7 +15,7 @@
 #include "VulkanDevice.hpp"
 #include "resource.hpp"
 
-namespace vks
+namespace vke
 {
     struct Buffer : public Resource
     {

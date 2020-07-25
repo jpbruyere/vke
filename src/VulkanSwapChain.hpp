@@ -12,7 +12,7 @@
 
 #include "vke.h"
 #include "rendertarget.hpp"
-namespace vks {
+namespace vke {
 
     typedef struct _SwapChainBuffers {
         VkImage image;

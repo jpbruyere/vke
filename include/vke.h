@@ -31,7 +31,7 @@
 
 
 
-namespace vks {
+namespace vke {
     typedef class  VkEngine*		ptrVkEngine;
     typedef class  VulkanSwapChain* ptrSwapchain;
     typedef struct VulkanDevice*	ptrVkDev;

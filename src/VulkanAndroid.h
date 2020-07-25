@@ -152,7 +152,7 @@ extern PFN_vkCmdCopyQueryPoolResults vkCmdCopyQueryPoolResults;
 extern PFN_vkCreateAndroidSurfaceKHR vkCreateAndroidSurfaceKHR;
 extern PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR;
 
-namespace vks
+namespace vke
 {
 	namespace android
 	{

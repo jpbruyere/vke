@@ -119,11 +119,11 @@ PFN_vkCmdCopyQueryPoolResults vkCmdCopyQueryPoolResults;
 PFN_vkCreateAndroidSurfaceKHR vkCreateAndroidSurfaceKHR;
 PFN_vkDestroySurfaceKHR vkDestroySurfaceKHR;
 
-int32_t vks::android::screenDensity;
+int32_t vke::android::screenDensity;
 
 void *libVulkan;
 
-namespace vks
+namespace vke
 {
 	namespace android
 	{
@@ -289,7 +289,7 @@ namespace vks
 			// Screen density
 			AConfiguration* config = AConfiguration_new();
 			AConfiguration_fromAssetManager(config, androidApp->activity->assetManager);
-			vks::android::screenDensity = AConfiguration_getDensity(config);
+			vke::android::screenDensity = AConfiguration_getDensity(config);
 			AConfiguration_delete(config);
 		}
 	}

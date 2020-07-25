@@ -5,7 +5,7 @@
 
 #define DRAW_FENCE_TIMEOUT 99900000
 
-namespace vks {
+namespace vke {
 
     class vkRenderer
     {
@@ -13,11 +13,11 @@ namespace vks {
 
         bool prepared = false;
 
-        vks::VulkanDevice*          device;
-        vks::RenderTarget*          renderTarget;
-        vks::VkEngine::UniformBuffers sharedUBOs;
+        vke::VulkanDevice*          device;
+        vke::RenderTarget*          renderTarget;
+        vke::VkEngine::UniformBuffers sharedUBOs;
 
-        vks::ShadingContext*        shadingCtx;
+        vke::ShadingContext*        shadingCtx;
 
         VkCommandPool               commandPool = VK_NULL_HANDLE;
         std::vector<VkCommandBuffer>cmdBuffers;
@@ -31,7 +31,7 @@ namespace vks {
         VkPipelineLayout        pipelineLayout  = VK_NULL_HANDLE;
 
         std::vector<float>	vertices;
-        vks::Buffer			vertexBuff;
+        vke::Buffer			vertexBuff;
         uint32_t			vBufferSize = 10000 * sizeof(float) * 6;
 
         virtual void prepare();
@@ -50,7 +50,7 @@ namespace vks {
         vkRenderer ();
         virtual ~vkRenderer();
 
-        virtual void create (ptrVkDev _device, vks::RenderTarget* _renderTarget,
+        virtual void create (ptrVkDev _device, vke::RenderTarget* _renderTarget,
                                                VkEngine::UniformBuffers& _sharedUbos);
         virtual void destroy();
 

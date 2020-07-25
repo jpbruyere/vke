@@ -3,7 +3,7 @@
 #include "vke.h"
 #include "texture.hpp"
 
-namespace vks {
+namespace vke {
     enum AttachmentType {ColorAttach, DepthAttach, ResolveAttach};
 
     struct AttachmentDef {
@@ -22,7 +22,7 @@ namespace vks {
         uint32_t                    height;
         VkSampleCountFlagBits       samples;
         std::vector<AttachmentDef>  attachmentDefs;
-        std::vector<vks::Texture>   attachments;
+        std::vector<vke::Texture>   attachments;
         int                         presentableAttachment = -1;
 
         ptrSwapchain    			swapChain   = nullptr;

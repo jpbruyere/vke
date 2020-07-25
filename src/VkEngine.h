@@ -31,7 +31,7 @@ struct bmchar {
 };
 std::array<bmchar, 255> parsebmFont(const std::string& fileName);
 
-namespace vks {
+namespace vke {
 
     class VkEngine
     {
@@ -51,7 +51,7 @@ namespace vks {
 
         void createInstance (const std::string& app_name, std::vector<const char*>& extentions);
     protected:
-        vks::vkPhyInfo      phyInfos;
+        vke::vkPhyInfo      phyInfos;
         GLFWwindow*         window;
 
         ptrSwapchain        swapChain;
@@ -85,8 +85,8 @@ namespace vks {
         } settings;
 
         struct UniformBuffers {
-            vks::Buffer matrices;
-            vks::Buffer params;
+            vke::Buffer matrices;
+            vke::Buffer params;
         } sharedUBOs;
 
         struct MVPMatrices {
